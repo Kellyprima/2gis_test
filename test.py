@@ -34,7 +34,7 @@ class Test:
     def make_dicts(self):
 
         '''
-        1. Создаем словарь для хранения уникальных (неповторяющихся) значений организаций
+        Создаем словарь для хранения уникальных (неповторяющихся) значений организаций
         из 2ГИС, в котором ключ - id организации в 2ГИС, значение каждого
         ключа - массив из словарей с информацией об организации и гипотезами.
 
@@ -111,34 +111,57 @@ class Test:
         orig - self.orig[id][0]
         hype - self.orig[id][n]
 
-
-
-        За каждое совпадение начисляется 1 балл. В итоге возвращается суммарный балл для 
-        каждой гипотезы. Он сохраняется отдельным значением 
+        Все параметры записей приводятся к единообразному виду. Затем параметры сравниваются. 
+        За каждое совпадение начисляется 1 балл. В итоге метод возвращает суммарный балл для 
+        каждой гипотезы. 
 
         '''
+        count = 0
+
+        name = orig['name'].replace(' ', '').lower()
+
+        orig_type = orig['type'].replace(' ', '').lower()
+
+        street_name = orig['street_name'].replace(' ', '').lower()
+
+        street_number = orig['street_number'].replace(' ', '').lower()
+
+        build_number = orig['build_number'].replace(' ', '').lower()
+        
+        owner_number = orig['owner_number'].replace(' ', '').lower()
+ 
+        corpus_number = orig['corpus_number'].replace(' ', '').lower()
 
 
+        ext_name = hype['ext_name'].replace(' ', '').lower()
 
+        ext_address = hype['ext_address'].replace(' ', '').lower()
 
+        if name in ext_name:
+            count+=1
+        
+        if orig_type != '' and orig_type in ext_name:
+            count+=1
 
+        if street_name in ext_address:
+            count+=1
 
+        if build_number !='' and build_number in ext_address:
+            count+=1
 
+        if owner_number!='' and owner_number in ext_address:
+            count+=1
 
+        if corpus_number !='' and corpus_number in ext_address:
+            count+=1
 
-
-
-
-
-
-
-
-
+        return count
+    
 
 
 #a = Test('testdata-small.csv')
 
-#test_dict = a.make_dicts()
+#print a.compare()
 
 
 
