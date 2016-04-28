@@ -20,8 +20,7 @@ compare_street(), compare_number(), compare_build(), compare_owner(), compare_co
 - Блок для создания итогового файла с отобранными гипотезами (метод write_file()).
 
 Такое решение и выбранная структура предполагают легкую перенастройку работы класса в случае с выбором другого 
-источника исходных данных (например, записи из базы данных).
-
+источника исходных данных/вывода результатов (например, записи из базы данных) 
 '''
 
 
@@ -179,17 +178,15 @@ class Test:
             if word in ext_list:
                 count+=1
 
-        if count==len(ext_list):
-            return 100
-
-        return (count*100)/len(ext_list)
+        
+        return (count*100)/len(name_list)
 
     def compare_type(self, orig, hype):
 
         '''
         Метод для сравнения типа заведения из оригинальной записи 2ГИС (orig) и 
         типа из записи с гипотезой (hype). Бьем строки 2ГИС и гипотезы на два массива строк и сравниваем
-        их. Метод возврващает максимум 50 баллов в случае совпадения всех слов в массивах.  
+        их. Метод возврващает максимум 100 баллов в случае совпадения всех слов в массивах.  
         
         '''
 
@@ -200,51 +197,55 @@ class Test:
         if orig_type=='':
             return 0 
 
-        type_list = re.split('[-\s]', orig_type)
+        orig_type_list = re.split('[-\s]', orig_type)
 
         ext_name = hype['ext_name'].lower().replace('ё', 'е')
 
         ext_list = re.split('[-\s]', ext_name)
 
-        for word in type_list:
+        for word in orig_type_list:
             if word in ext_list:
                 count+=1
         
-        if count==len(ext_list):
-            return 50
-        return (count*50)/len(ext_list)
+        
+        return (count*100)/len(orig_type_list)
 
     def compare_street(self, orig, hype):
 
         '''
         Метод для сравнения названия улицы из оригинальной записи 2ГИС (orig) и 
-        имени адреса из записи с гипотезой (hype). Бьем строки 2ГИС и гипотезы на два массива строк и сравниваем
-        их. Метод возврващает максимум 100 баллов в случае совпадения всех слов в массивах.  
+        имени адреса из записи с гипотезой (hype).  Метод возвращает 100 баллов в случае совпадения паттерна.  
         
-        '''
-        
-        count = 0
+        '''        
 
-        street_name = orig['street_name'].lower().replace('ё', 'е')
+        orig_street_name = orig['street_name'].lower().replace('ё', 'е')
 
-        street_list = re.split('[-\s]', street_name)
+        #street_list = re.split('[-\s]', street_name)
 
         ext_address = hype['ext_address'].lower()
 
-        to_replace = [('ё', 'е'),('ул.', ''),('.','')]
-
+        to_replace = [('ё', 'е'),('ш.', 'шоссе'), ('пр.', 'проспект'),('бул.', 'бульвар'),('ул.', '')]
+        
         for pair in to_replace:
             ext_address = ext_address.replace(pair[0], pair[1])
 
-        ext_list = re.split('[-\s,]', ext_address)
+        #если проспекты и шоссе есть и в оригинале и гипотезе - убираем их из сравнения
+        
+        to_replace1 = ['шоссе','проспект','бульвар']
 
-        for street in street_list:
-            if street in ext_list:
-                count +=1
-                
-        if count==len(ext_list):
-            return 100
-        return (count*100)/len(ext_list)
+        for type_street in to_replace1:
+        	if orig_street_name.find(type_street)>-1 and ext_address.find(type_street)>-1:
+        		orig_street_name = orig_street_name.replace(type_street, '')
+        		ext_address = ext_address.replace(type_street, '') 
+
+
+
+        pattern = re.search('^'+orig_street_name.strip(), ext_address.strip())
+     
+        if pattern!=None:
+        	return 100
+  
+        return 0
 
 
     def compare_number(self, orig, hype):
@@ -406,6 +407,13 @@ class Test:
         
         return final_count
 
+    def compareDebug(self, orig, hype):        
+
+        final_count = 'n:'+str(self.compare_name(orig, hype))+' t:'+str(self.compare_type(orig,hype))+' s:'+str(self.compare_street(orig, hype))+' n:'+\
+        str(self.compare_number(orig, hype))+' b:'+str(self.compare_build(orig, hype))+' k:'+str(self.compare_corpus(orig, hype))+' ow:'+str(self.compare_owner(orig, hype))
+        
+        return final_count
+
 
 
     def final_comparison(self):
@@ -427,6 +435,8 @@ class Test:
                 temp_count[self.orig[key][i]['ext_id']] = coefficient
                 #лог коэффициента для каждой гипотезы
                 self.orig[key][i]['count'] = coefficient
+
+                #self.orig[key][i]['countDebug'] = self.compareDebug(self.orig[key][0], self.orig[key][i])
             
             
             key_value = sorted(temp_count.items(),key=lambda x: x[1], reverse=True)
@@ -476,8 +486,8 @@ class Test:
                         'ext_id': hyp['ext_id'],
                         'ext_name': hyp['ext_name'],
                         'ext_address': hyp['ext_address'],
-                        'count' : hyp['count']
-
+                        'count' : hyp['count'],
+                        #'countDebug' : hyp['countDebug']
                         
                         })
                     i+=1
